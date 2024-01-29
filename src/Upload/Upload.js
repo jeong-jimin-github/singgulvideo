@@ -6,13 +6,27 @@ import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { useEffect } from 'react';
 
 function Upload() {
-    const [url, setUrl] = useState('');
+    const [urlv, setUrl] = useState('');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [username, setUsername] = useState('');
     const [user, setUser] = useState(null);
     const db = getFirestore();
     const rand = Math.random().toString(16).substr(2, 8);
+
+    function extractVideoId(url) {
+      const urlObj = new URL(url);
+      if (urlObj.hostname === 'youtu.be') {
+        return urlObj.pathname.slice(1);
+      } else if (urlObj.hostname === 'www.youtube.com' || urlObj.hostname === 'youtube.com') {
+        if (urlObj.pathname === '/watch') {
+          return urlObj.searchParams.get('v');
+        } else if (urlObj.pathname.startsWith('/embed/')) {
+          return urlObj.pathname.slice(7);
+        }
+      }
+      return null;
+    }
     useEffect(() => {
         const auth = getAuth();
         onAuthStateChanged(auth, async (user) => {
@@ -30,6 +44,7 @@ function Upload() {
       }, []);
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const url = extractVideoId(urlv);
         // Perform any necessary validation or data processing here
         console.log('Submitted:', { url, title, description });
       
@@ -53,7 +68,7 @@ function Upload() {
             <h1>영상 업로드</h1>
             <label>
                 유튜브 영상 주소:
-                <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} />
+                <input type="text" value={urlv} onChange={(e) => setUrl(e.target.value)} />
             </label>
             <br />
             <label>
