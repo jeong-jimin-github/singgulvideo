@@ -29,11 +29,11 @@ function Login() {
       <h1>로그인</h1>
         <div className={style.formgroup}>
           <label htmlFor="exampleInputEmail1">이메일 주소</label><br></br>
-          <input type="email" className={style.formcontrol} id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Enter email" onChange={e => setEmail(e.target.value)} />
+          <input type="email" className={style.formcontrol} id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="이메일 입력" onChange={e => setEmail(e.target.value)} />
         </div>
         <div className="form-group">
           <label htmlFor="exampleInputPassword1">비밀번호</label><br></br>
-          <input type="password" className={style.formcontrol} id="exampleInputPassword1" placeholder="Password" onChange={e => setPassword(e.target.value)} />
+          <input type="password" className={style.formcontrol} id="exampleInputPassword1" placeholder="비밀번호 입력" onChange={e => setPassword(e.target.value)} />
           <br></br><br></br><a href="/register">계정이 없으신가요?</a>
         </div>
         <br></br>
