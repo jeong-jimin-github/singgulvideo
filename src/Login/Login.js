@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import style from "./Login.module.css";
 import logo from '../logo.svg';
-
+import Footer from '../Footer.js';
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,7 +39,9 @@ function Login() {
         <br></br>
         <button type="submit" className={style.btnprimary}>로그인</button>
       </form>
-    </div></>
+
+    </div>
+    <Footer /></>
   );
 }
 

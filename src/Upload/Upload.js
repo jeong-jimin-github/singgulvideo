@@ -4,7 +4,8 @@ import { collection, addDoc } from 'firebase/firestore'; // Firestore의 collect
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { useEffect } from 'react';
-
+import logo from '../logo.svg';
+import Footer from '../Footer.js';
 function Upload() {
     const [urlv, setUrl] = useState('');
     const [title, setTitle] = useState('');
@@ -56,33 +57,39 @@ function Upload() {
             username,
             rand
           });
-          console.log('Document written with ID: ', docRef.id);
+          console.log('업로드 완료: ', docRef.id);
             window.location.href = '/';
         } catch (e) {
-          console.error('Error adding document: ', e);
+          console.error('업로드 실패: ', e);
         }
       };
 
+      const gohome = () => {
+        window.location.href = '/';
+      }
+      
+
     return (
-        <form onSubmit={handleSubmit}>
-            <h1>영상 업로드</h1>
-            <label>
-                유튜브 영상 주소:
-                <input type="text" value={urlv} onChange={(e) => setUrl(e.target.value)} />
-            </label>
-            <br />
-            <label>
-                제목:
-                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
-            </label>
-            <br />
-            <label>
-                설명:
-                <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-            </label>
-            <br />
-            <button type="submit">업로드</button>
-        </form>
+        <>        <img onClick={gohome} className={style.logo} src={logo} width={300} /><form onSubmit={handleSubmit}>
+        <h1>영상 업로드</h1>
+        <label>
+          유튜브 영상 주소:
+          <input type="text" value={urlv} onChange={(e) => setUrl(e.target.value)} />
+        </label>
+        <br />
+        <label>
+          제목:
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
+        </label>
+        <br />
+        <label>
+          설명:
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+        </label>
+        <br />
+        <button type="submit">업로드</button>
+
+      </form><Footer /></>
     );
 }
 

@@ -3,7 +3,6 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f5f5f5;
 }
 
 .logo{
@@ -28,6 +27,7 @@
 }
 
 .formcontrol {
+  width: 100%;
   border: 1px solid #ddd;
   border-radius: 4px;
   padding: 10px;
@@ -41,7 +41,7 @@
   padding: 10px 20px;
   border-radius: 4px;
   cursor: pointer;
-  width: 100%;
+  width: 50%;
 }
 
 .btnprimary:hover {

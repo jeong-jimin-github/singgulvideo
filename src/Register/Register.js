@@ -3,7 +3,7 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import logo from '../logo.svg';
 import style from "./Register.module.css";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
-
+import Footer from '../Footer.js';
 const db = getFirestore();
 const auth = getAuth();
 function Register() {
@@ -58,7 +58,8 @@ function Register() {
         <p>{error}</p>
         <button type="submit" className={style.btnprimary}>회원가입</button>
       </form>
-    </div></>
+    </div>
+    <Footer /></>
   );
 }
 

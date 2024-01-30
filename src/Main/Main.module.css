@@ -29,8 +29,33 @@
   background-color: #45a049; /* 호버 시 배경색 */
   color: white; /* 호버 시 텍스트 색상 */
 }
-.video{
+.video {
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  justify-content: center;
   margin: 20px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  background-color: #f8f9fa;
+  transition: transform .2s;
+  cursor: pointer;
+}
+
+.video:hover {
+  transform: scale(1.05);
+}
+
+.video img {
+  height: 200px;
+}
+
+.video p {
+  margin-top: 10px;
+  text-align: left;
+  font-size: 16px;
+  color: #343a40;
 }
 .upload {
   position: absolute;

@@ -6,6 +6,7 @@ import style from "./Main.module.css";
 import logo from '../logo.svg';
 import { collection, getDocs } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
+import Footer from '../Footer.js';
 const firebaseConfig = {
   apiKey: "AIzaSyDOjM2L8Bz-BLEcWwspNmIh01HnB3YJrZw",
   authDomain: "video-e6628.firebaseapp.com",
@@ -98,6 +99,7 @@ function Main() {
 </div>
         </div>
       </header>
+      <Footer />
     </div>
   );
   
