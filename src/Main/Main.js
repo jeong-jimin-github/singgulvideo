@@ -47,7 +47,8 @@ function Main() {
     <div onClick={() => goVideo(upload.rand)} className={style.video} key={index}>
       <img height={200} src={"https://img.youtube.com/vi/" + upload.url + "/0.jpg"} width={300} />
       <b>{upload.title}</b>
-      <p>업로드: {upload.username}</p>
+      <p>조회수 {upload.view}</p>
+      <div className={style.kb}><img width={30} style={{borderRadius: 90}} height={30} src={'https://avatar.oxro.io/avatar.svg?name=' + upload.username} /><p style={{margin: 10}}>{upload.username}</p></div> 
     </div>
   ))}
 </div>

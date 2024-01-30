@@ -2,7 +2,10 @@
     margin: 50px;
         width: 500px;
 }
-
+.kb {
+  display: flex;
+  align-items: center;
+}
 
 .videoitem {
     width: 200px;

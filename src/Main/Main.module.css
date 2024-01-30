@@ -46,11 +46,10 @@
 .video:hover {
   transform: scale(1.05);
 }
-
-.video img {
-  height: 200px;
+.kb {
+  display: flex;
+  align-items: center;
 }
-
 .video p {
   margin-top: 10px;
   text-align: left;

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
+import { updateDoc, increment, getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
 import style from "./Video.module.css";
 import logo from '../logo.svg';
 import Up from '../Up.js';
+import YouTube from '@u-wave/react-youtube';
+
 function Video() {
     const  rand = useParams()["*"];
     console.log(rand);
@@ -33,7 +35,23 @@ useEffect(() => {
       
         fetchVideoData();
       }, [rand]);
+      useEffect(() => {
+        const incrementViewCount = async () => {
+          if (rand) {
+            const q = query(collection(db, 'uploads'), where('rand', '==', rand));
+            const querySnapshot = await getDocs(q);
+            const doc = querySnapshot.docs[0];
 
+            if (doc) {
+              await updateDoc(doc.ref, { view: increment(1) });
+            }
+          }
+        };
+
+        if (rand) {
+          incrementViewCount();
+        }
+      }, [rand]);
       const gohome = () => {
         window.location.href = '/';
       }
@@ -45,18 +63,18 @@ useEffect(() => {
             <><img onClick={gohome} className={style.logo} src={logo} width={300} /><Up /><div className={style.videocontainer}>
             {videoData && (
               <>
-                <iframe
-                height={480}
-                width={720}
+                <YouTube
                   className={style.videoplayer}
-                  src={`https://www.youtube.com/embed/${videoData.url}`}
-                  title="YouTube video player"
-                  frameborder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                ></iframe>
+                  video={videoData.url}
+                  width="1024px"
+                  height="576px"
+                  autoplay
+                />
                 <h2>{videoData.title}</h2>
-                <p>업로드: {videoData.username}</p>
-                <p>설명: {videoData.description}</p>
+                <div className={style.kb}><img width={30} style={{borderRadius: 90}} height={30} src={'https://avatar.oxro.io/avatar.svg?name=' + videoData.username} /><p style={{margin: 10}}>{videoData.username}</p></div> 
+                <p>설명</p>
+                <hr width={1280}></hr>
+                <p>{videoData.description}</p>
               </>
             )}
           </div>    

@@ -14,7 +14,7 @@ function Upload() {
     const [user, setUser] = useState(null);
     const db = getFirestore();
     const rand = Math.random().toString(16).substr(2, 8);
-
+  const view = 0;
     function extractVideoId(url) {
       const urlObj = new URL(url);
       if (urlObj.hostname === 'youtu.be') {
@@ -55,7 +55,8 @@ function Upload() {
             title,
             description,
             username,
-            rand
+            rand,
+            view
           });
           console.log('업로드 완료: ', docRef.id);
             window.location.href = '/';
