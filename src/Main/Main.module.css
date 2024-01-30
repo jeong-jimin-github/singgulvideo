@@ -57,6 +57,12 @@
   font-size: 16px;
   color: #343a40;
 }
+.video b {
+  margin-top: 10px;
+  text-align: left;
+  font-size: 16px;
+  color: #343a40;
+}
 .upload {
   position: absolute;
   top: 0;

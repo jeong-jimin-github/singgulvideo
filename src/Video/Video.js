@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
 import style from "./Video.module.css";
 import logo from '../logo.svg';
+import Up from '../Up.js';
 function Video() {
     const  rand = useParams()["*"];
     console.log(rand);
@@ -41,7 +42,7 @@ useEffect(() => {
         window.location.href = `/video/${rand}`;
       }
         return (
-            <><img onClick={gohome} className={style.logo} src={logo} width={300} /><div className={style.videocontainer}>
+            <><img onClick={gohome} className={style.logo} src={logo} width={300} /><Up /><div className={style.videocontainer}>
             {videoData && (
               <>
                 <iframe
