@@ -16,6 +16,7 @@ function Video() {
   const [videoData, setVideoData] = useState(null);
   const [allVideos, setAllVideos] = useState([]);
   const [status, setStatus] = useState('loading');
+  const [commentListTarget, setCommentListTarget] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -89,11 +90,13 @@ function Video() {
                 videoId={videoData.url}
                 videoRand={videoData.rand}
                 title={videoData.title}
+                commentListTarget={commentListTarget}
               />
 
               <div className="watch-info">
                 <span className="section-kicker">WATCHING</span>
                 <h1>{videoData.title || '제목 없는 영상'}</h1>
+                <div ref={setCommentListTarget} />
 
                 <VideoSocial
                   video={videoData}
