@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { addDoc, collection, doc, getDoc, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import style from './NicoPlayer.module.css';
@@ -57,12 +57,14 @@ function NicoPlayer({ videoId, videoRand, title }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [comments, setComments] = useState([]);
+  const [commentReactions, setCommentReactions] = useState([]);
   const [activeComments, setActiveComments] = useState([]);
   const [commentsVisible, setCommentsVisible] = useState(true);
   const [commentText, setCommentText] = useState('');
   const [commentStatus, setCommentStatus] = useState('loading');
   const [commentError, setCommentError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [reactionBusy, setReactionBusy] = useState('');
   const [playerError, setPlayerError] = useState('');
   const [user, setUser] = useState(undefined);
   const [username, setUsername] = useState('');
@@ -117,6 +119,13 @@ function NicoPlayer({ videoId, videoRand, title }) {
     );
 
     return unsubscribe;
+  }, [videoRand]);
+
+  useEffect(() => {
+    const reactionsQuery = query(collection(db, 'commentReactions'), where('videoRand', '==', videoRand));
+    return onSnapshot(reactionsQuery, (snapshot) => {
+      setCommentReactions(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
+    }, console.error);
   }, [videoRand]);
 
   useEffect(() => {
@@ -266,6 +275,12 @@ function NicoPlayer({ videoId, videoRand, title }) {
     }
   };
 
+  const seekToComment = (time) => {
+    const target = Math.max(0, Number(time) || 0);
+    playerRef.current?.seekTo?.(target, true);
+    playerRef.current?.playVideo?.();
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     const text = commentText.trim();
@@ -291,6 +306,46 @@ function NicoPlayer({ videoId, videoRand, title }) {
       setCommentError('댓글 등록에 실패했습니다. Firestore 권한을 확인해 주세요.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const getReactionSummary = (commentId) => {
+    const items = commentReactions.filter((item) => item.commentId === commentId);
+    return {
+      likes: items.filter((item) => item.reaction === 'like').length,
+      dislikes: items.filter((item) => item.reaction === 'dislike').length,
+      mine: user ? items.find((item) => item.uid === user.uid)?.reaction || '' : '',
+    };
+  };
+
+  const toggleCommentReaction = async (commentId, reaction) => {
+    if (!user) {
+      setCommentError('댓글 평가를 하려면 로그인이 필요합니다.');
+      return;
+    }
+    if (reactionBusy) return;
+
+    const summary = getReactionSummary(commentId);
+    const ref = doc(db, 'commentReactions', `${user.uid}__${commentId}`);
+    setReactionBusy(commentId);
+    setCommentError('');
+    try {
+      if (summary.mine === reaction) {
+        await deleteDoc(ref);
+      } else {
+        await setDoc(ref, {
+          uid: user.uid,
+          commentId,
+          videoRand,
+          reaction,
+          updatedAt: serverTimestamp(),
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      setCommentError('댓글 평가 저장에 실패했습니다.');
+    } finally {
+      setReactionBusy('');
     }
   };
 
@@ -359,6 +414,60 @@ function NicoPlayer({ videoId, videoRand, title }) {
 
         {commentError && <p className={style.errorText} role="alert">{commentError}</p>}
       </div>
+
+      <section className={style.commentList} aria-labelledby={`comments-${videoRand}`}>
+        <div className={style.commentListHeading}>
+          <div>
+            <span>COMMENTS</span>
+            <h2 id={`comments-${videoRand}`}>댓글 {comments.length.toLocaleString('ko-KR')}개</h2>
+          </div>
+          <p>시간을 누르면 해당 장면으로 이동합니다.</p>
+        </div>
+
+        {commentStatus === 'ready' && comments.length === 0 && (
+          <div className={style.emptyComments}>아직 댓글이 없습니다. 첫 댓글을 남겨보세요.</div>
+        )}
+
+        <div className={style.commentItems}>
+          {comments.map((comment) => {
+            const summary = getReactionSummary(comment.id);
+            return (
+              <article className={style.commentItem} key={comment.id}>
+                <div className={style.commentAvatar} aria-hidden="true">
+                  {(comment.username || 'U').slice(0, 1).toUpperCase()}
+                </div>
+                <div className={style.commentBody}>
+                  <div className={style.commentMeta}>
+                    <strong>{comment.username || '사용자'}</strong>
+                    <button type="button" onClick={() => seekToComment(comment.time)}>{formatTime(comment.time)}</button>
+                  </div>
+                  <p>{comment.text}</p>
+                  <div className={style.commentActions}>
+                    <button
+                      type="button"
+                      className={summary.mine === 'like' ? style.reactionActive : ''}
+                      onClick={() => toggleCommentReaction(comment.id, 'like')}
+                      disabled={reactionBusy === comment.id}
+                      aria-pressed={summary.mine === 'like'}
+                    >
+                      👍 {summary.likes}
+                    </button>
+                    <button
+                      type="button"
+                      className={summary.mine === 'dislike' ? style.reactionActive : ''}
+                      onClick={() => toggleCommentReaction(comment.id, 'dislike')}
+                      disabled={reactionBusy === comment.id}
+                      aria-pressed={summary.mine === 'dislike'}
+                    >
+                      👎 {summary.dislikes}
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
     </section>
   );
 }
