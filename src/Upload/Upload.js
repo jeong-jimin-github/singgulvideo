@@ -17,7 +17,7 @@ function extractVideoId(input) {
       const parts = url.pathname.split('/').filter(Boolean);
       if (['embed', 'shorts', 'live'].includes(parts[0])) return parts[1] || null;
     }
-  } catch (error) {
+  } catch {
     return null;
   }
   return null;
