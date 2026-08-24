@@ -20,6 +20,14 @@ function UploadIcon() {
   );
 }
 
+function DashboardIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z" />
+    </svg>
+  );
+}
+
 function Up({ searchValue = '', onSearchChange, showSearch = false }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -76,10 +84,16 @@ function Up({ searchValue = '', onSearchChange, showSearch = false }) {
 
         <nav className="header-actions" aria-label="사용자 메뉴">
           {user && (
-            <Link className="icon-button upload-shortcut" to="/upload" title="영상 등록">
-              <UploadIcon />
-              <span>업로드</span>
-            </Link>
+            <>
+              <Link className="icon-button upload-shortcut" to="/dashboard" title="영상 관리">
+                <DashboardIcon />
+                <span>관리</span>
+              </Link>
+              <Link className="icon-button upload-shortcut" to="/upload" title="영상 등록">
+                <UploadIcon />
+                <span>업로드</span>
+              </Link>
+            </>
           )}
 
           {!loadingUser && (user ? (
