@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import Footer from '../Footer';
 import Up from '../Up';
 import { db } from '../firebase';
+import NicoPlayer from './NicoPlayer';
 
 function formatViews(value) {
   return (Number(value) || 0).toLocaleString('ko-KR');
@@ -83,14 +84,11 @@ function Video() {
         {status === 'ready' && videoData && (
           <div className="watch-layout">
             <article className="watch-main">
-              <div className="player-shell">
-                <iframe
-                  src={`https://www.youtube.com/embed/${videoData.url}?autoplay=1&rel=0`}
-                  title={videoData.title || 'Singgul Video'}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
-              </div>
+              <NicoPlayer
+                videoId={videoData.url}
+                videoRand={videoData.rand}
+                title={videoData.title}
+              />
 
               <div className="watch-info">
                 <span className="section-kicker">WATCHING</span>
