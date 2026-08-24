@@ -43,12 +43,3 @@ singgulvideo/
 ├─ package.json
 └─ README.md
 ```
-
-## 🌐 배포
-
-이 프로젝트는 Vercel로 배포되어 있습니다.  
-Live URL: https://singgulvideo-three.vercel.app/
-
-## 📝 참고
-
-기존 Create React App 기본 README 내용을 프로젝트 맞춤형으로 정리했습니다.
