@@ -1,65 +1,113 @@
-import React, { useState } from 'react';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import logo from '../logo.svg';
-import style from "./Register.module.css";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
-import Footer from '../Footer.js';
-const db = getFirestore();
-const auth = getAuth();
+import { useState } from 'react';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { Link, useNavigate } from 'react-router-dom';
+import Footer from '../Footer';
+import Up from '../Up';
+import { auth, db } from '../firebase';
+
 function Register() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setError('');
+
+    if (username.trim().length < 2) {
+      setError('이름은 2자 이상 입력해 주세요.');
+      return;
+    }
     if (password.length < 6) {
       setError('비밀번호는 6자 이상이어야 합니다.');
       return;
     }
+
+    setSubmitting(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Firestore에 uid와 username 저장
-      await setDoc(doc(db, "users", user.uid), {
-        username: username,
-      });
-
-      // 메인 화면으로 이동합니다.
-      window.location.href = '/login';
-    } catch (error) {
-      console.error(error);
-      setError('회원가입에 실패했습니다.');
+      const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      await setDoc(doc(db, 'users', credential.user.uid), { username: username.trim() });
+      navigate('/');
+    } catch (authError) {
+      console.error(authError);
+      setError(authError.code === 'auth/email-already-in-use'
+        ? '이미 사용 중인 이메일입니다.'
+        : '회원가입에 실패했습니다. 입력 내용을 확인해 주세요.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const gohome = () => {
-    window.location.href = '/';
-  }
-
   return (
-    <><img onClick={gohome} className={style.logo} src={logo} width={300} /><div className={style.App}>
-      <form onSubmit={handleSubmit}>
-      <h1>회원가입</h1>
-        <div className={style.formgroup}>
-          <label htmlFor="exampleInputEmail1">이메일 주소</label><br></br>
-          <input type="email" className={style.formcontrol} id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="이메일 입력" onChange={e => setEmail(e.target.value)} />
-        </div>
-        <div className="form-group">
-          <label htmlFor="exampleInputPassword1">비밀번호</label><br></br>
-          <input type="password" className={style.formcontrol} id="exampleInputPassword1" placeholder="비밀번호 입력" onChange={e => setPassword(e.target.value)} />
-        </div><br></br>
-        <div className="form-group">
-          <label htmlFor="exampleInputUsername">이름</label><br></br>
-          <input className={style.formcontrol} id="exampleInputUsername" placeholder="이름 입력" onChange={e => setUsername(e.target.value)} />
-        </div>
-        <p>{error}</p>
-        <button type="submit" className={style.btnprimary}>회원가입</button>
-      </form>
+    <div className="app-shell auth-shell">
+      <Up />
+      <main className="auth-page">
+        <section className="auth-intro">
+          <span className="eyebrow">JOIN SINGGUL</span>
+          <h1>좋아하는 영상을<br />한곳에 모아보세요.</h1>
+          <p>간단한 계정으로 영상 링크를 등록하고 공유할 수 있습니다.</p>
+        </section>
+
+        <section className="form-card" aria-labelledby="register-title">
+          <div className="form-card-heading">
+            <span className="section-kicker">CREATE ACCOUNT</span>
+            <h2 id="register-title">회원가입</h2>
+          </div>
+
+          <form onSubmit={handleSubmit} className="form-stack">
+            <label className="field">
+              <span>이름</span>
+              <input
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="표시할 이름"
+                autoComplete="nickname"
+                maxLength={32}
+                required
+              />
+            </label>
+
+            <label className="field">
+              <span>이메일</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="name@example.com"
+                autoComplete="email"
+                required
+              />
+            </label>
+
+            <label className="field">
+              <span>비밀번호</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="6자 이상"
+                autoComplete="new-password"
+                minLength={6}
+                required
+              />
+            </label>
+
+            {error && <p className="form-error" role="alert">{error}</p>}
+
+            <button className="button button-primary button-wide" type="submit" disabled={submitting}>
+              {submitting ? '계정 만드는 중…' : '계정 만들기'}
+            </button>
+          </form>
+
+          <p className="form-switch">이미 계정이 있나요? <Link to="/login">로그인</Link></p>
+        </section>
+      </main>
+      <Footer />
     </div>
-    <Footer /></>
   );
 }
 

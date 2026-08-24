@@ -1,78 +1,104 @@
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { useState, useEffect } from 'react';
-import { signOut } from 'firebase/auth';
-import style from "./Main/Main.module.css";
-import { initializeApp } from 'firebase/app';
-const firebaseConfig = {
-  apiKey: "AIzaSyDOjM2L8Bz-BLEcWwspNmIh01HnB3YJrZw",
-  authDomain: "video-e6628.firebaseapp.com",
-  projectId: "video-e6628",
-  storageBucket: "video-e6628.appspot.com",
-  messagingSenderId: "43014284729",
-  appId: "1:43014284729:web:d3f45b82aaf7d4b4764268",
-  measurementId: "G-T5KJS3QFBT"
-};
-// Firestore 초기화
-const app = initializeApp(firebaseConfig);
-// Firestore 초기화
-const db = getFirestore(app);
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { Link, useNavigate } from 'react-router-dom';
+import { auth, db } from './firebase';
 
-function Up() {
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m21 21-4.35-4.35m2.35-5.15A7.5 7.5 0 1 1 4 11.5a7.5 7.5 0 0 1 15 0Z" />
+    </svg>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5" />
+    </svg>
+  );
+}
+
+function Up({ searchValue = '', onSearchChange, showSearch = false }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [username, setUsername] = useState('');
-  
-  const handleLogout = async () => {
-    try {
-      await signOut(getAuth());
-      setUser(null);
-      setUsername('');
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
-    const auth = getAuth();
-    onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setUsername(docSnap.data().username);
-        } else {
-          console.log("No such document!");
+    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+      setUser(nextUser);
+      setUsername('');
+
+      if (nextUser) {
+        try {
+          const snapshot = await getDoc(doc(db, 'users', nextUser.uid));
+          setUsername(snapshot.exists() ? snapshot.data().username : nextUser.email || '사용자');
+        } catch (error) {
+          console.error(error);
+          setUsername(nextUser.email || '사용자');
         }
       }
+
+      setLoadingUser(false);
     });
+
+    return unsubscribe;
   }, []);
 
-  const goLogin = () => {
-    window.location.href = '/login';
-  }
-  const upload = () => {
-    window.location.href = '/upload';
-  }
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate('/');
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <div className="button-container">
-          {user ? (
-            <>
-                          <button onClick={upload} className={style.upload}>업로드</button>
-              <button onClick={handleLogout} className={style.login}>{username}</button>
-            </>
-          ) : (
-            <>
-              <button onClick={goLogin} className={style.login}>로그인</button>
-            </>
+    <header className="site-header">
+      <div className="header-inner">
+        <Link to="/" className="brand" aria-label="Singgul Video 홈">
+          <span className="brand-mark" aria-hidden="true">S</span>
+          <span className="brand-name">Singgul</span>
+          <span className="brand-tag">VIDEO</span>
+        </Link>
+
+        {showSearch ? (
+          <label className="search-box">
+            <SearchIcon />
+            <span className="sr-only">영상 검색</span>
+            <input
+              type="search"
+              value={searchValue}
+              onChange={(event) => onSearchChange?.(event.target.value)}
+              placeholder="영상 또는 채널 검색"
+            />
+          </label>
+        ) : <div className="header-spacer" />}
+
+        <nav className="header-actions" aria-label="사용자 메뉴">
+          {user && (
+            <Link className="icon-button upload-shortcut" to="/upload" title="영상 등록">
+              <UploadIcon />
+              <span>업로드</span>
+            </Link>
           )}
-        </div>
-      </header>
-    </div>
+
+          {!loadingUser && (user ? (
+            <div className="profile-menu">
+              <div className="avatar small-avatar" aria-hidden="true">
+                {(username || 'U').slice(0, 1).toUpperCase()}
+              </div>
+              <div className="profile-copy">
+                <strong>{username || '사용자'}</strong>
+                <button type="button" onClick={handleLogout}>로그아웃</button>
+              </div>
+            </div>
+          ) : (
+            <Link className="button button-ghost header-login" to="/login">로그인</Link>
+          ))}
+        </nav>
+      </div>
+    </header>
   );
-  
 }
 
 export default Up;

@@ -1,93 +1,142 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { updateDoc, increment, getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
-import style from "./Video.module.css";
-import logo from '../logo.svg';
-import Up from '../Up.js';
-import YouTube from '@u-wave/react-youtube';
+import { useEffect, useMemo, useState } from 'react';
+import { collection, getDocs, increment, query, updateDoc, where } from 'firebase/firestore';
+import { Link, useParams } from 'react-router-dom';
+import Footer from '../Footer';
+import Up from '../Up';
+import { db } from '../firebase';
+
+function formatViews(value) {
+  return (Number(value) || 0).toLocaleString('ko-KR');
+}
 
 function Video() {
-    const  rand = useParams()["*"];
-    console.log(rand);
-    const [videoData, setVideoData] = useState(null);
-    const db = getFirestore();
-    const [randomVideos, setRandomVideos] = useState([]);
+  const { rand } = useParams();
+  const [videoData, setVideoData] = useState(null);
+  const [allVideos, setAllVideos] = useState([]);
+  const [status, setStatus] = useState('loading');
 
-useEffect(() => {
-  const fetchRandomVideos = async () => {
-    const q = query(collection(db, 'uploads'));
-    const querySnapshot = await getDocs(q);
-    const matchedData = querySnapshot.docs.map(doc => doc.data());
-    setRandomVideos(matchedData);
-  };
+  useEffect(() => {
+    let active = true;
 
-  fetchRandomVideos();
-}, []);
-    useEffect(() => {
-        const fetchVideoData = async () => {
-          if (rand) { // rand 값이 있는 경우에만 쿼리 실행
-            const q = query(collection(db, 'uploads'), where('rand', '==', rand));
-            const querySnapshot = await getDocs(q);
-            const matchedData = querySnapshot.docs.map(doc => doc.data());
-            setVideoData(matchedData[0]);
-          }
-        };
-      
-        fetchVideoData();
-      }, [rand]);
-      useEffect(() => {
-        const incrementViewCount = async () => {
-          if (rand) {
-            const q = query(collection(db, 'uploads'), where('rand', '==', rand));
-            const querySnapshot = await getDocs(q);
-            const doc = querySnapshot.docs[0];
+    async function loadPage() {
+      try {
+        const currentQuery = query(collection(db, 'uploads'), where('rand', '==', rand));
+        const [currentSnapshot, allSnapshot] = await Promise.all([
+          getDocs(currentQuery),
+          getDocs(collection(db, 'uploads')),
+        ]);
 
-            if (doc) {
-              await updateDoc(doc.ref, { view: increment(1) });
-            }
-          }
-        };
-
-        if (rand) {
-          incrementViewCount();
+        if (!active) return;
+        const currentDocument = currentSnapshot.docs[0];
+        if (!currentDocument) {
+          setStatus('not-found');
+          return;
         }
-      }, [rand]);
-      const gohome = () => {
-        window.location.href = '/';
-      }
 
-      const goVideo = (rand) => {
-        window.location.href = `/video/${rand}`;
+        setVideoData({ id: currentDocument.id, ...currentDocument.data() });
+        setAllVideos(allSnapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
+        setStatus('ready');
+
+        const viewKey = `singgul-viewed-${rand}`;
+        if (!sessionStorage.getItem(viewKey)) {
+          sessionStorage.setItem(viewKey, '1');
+          updateDoc(currentDocument.ref, { view: increment(1) }).catch(console.error);
+        }
+      } catch (error) {
+        console.error(error);
+        if (active) setStatus('error');
       }
-        return (
-            <><img onClick={gohome} className={style.logo} src={logo} width={300} /><Up /><div className={style.videocontainer}>
-            {videoData && (
-              <>
-                <YouTube
-                  className={style.videoplayer}
-                  video={videoData.url}
-                  width="1024px"
-                  height="576px"
-                  autoplay
+    }
+
+    loadPage();
+    return () => { active = false; };
+  }, [rand]);
+
+  const recommendations = useMemo(() => {
+    if (!videoData) return [];
+    return allVideos
+      .filter((video) => video.rand !== videoData.rand)
+      .sort((a, b) => (Number(b.view) || 0) - (Number(a.view) || 0))
+      .slice(0, 10);
+  }, [allVideos, videoData]);
+
+  return (
+    <div className="app-shell">
+      <Up />
+      <main className="page-content watch-page">
+        {status === 'loading' && (
+          <div className="watch-layout">
+            <div className="player-skeleton" />
+            <div className="recommendation-skeleton" />
+          </div>
+        )}
+
+        {(status === 'error' || status === 'not-found') && (
+          <section className="state-panel watch-state">
+            <span className="state-icon">{status === 'not-found' ? '404' : '!'}</span>
+            <h1>{status === 'not-found' ? '영상을 찾을 수 없습니다.' : '영상을 불러오지 못했습니다.'}</h1>
+            <p>{status === 'not-found' ? '삭제되었거나 잘못된 주소일 수 있습니다.' : '잠시 후 다시 시도해 주세요.'}</p>
+            <Link className="button button-primary" to="/">홈으로 돌아가기</Link>
+          </section>
+        )}
+
+        {status === 'ready' && videoData && (
+          <div className="watch-layout">
+            <article className="watch-main">
+              <div className="player-shell">
+                <iframe
+                  src={`https://www.youtube.com/embed/${videoData.url}?autoplay=1&rel=0`}
+                  title={videoData.title || 'Singgul Video'}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
                 />
-                <h2>{videoData.title}</h2>
-                <div className={style.kb}><img width={30} style={{borderRadius: 90}} height={30} src={'https://avatar.oxro.io/avatar.svg?name=' + videoData.username} /><p style={{margin: 10}}>{videoData.username}</p></div> 
-                <p>설명</p>
-                <hr width={1280}></hr>
-                <p>{videoData.description}</p>
-              </>
-            )}
-          </div>    
-        <div className={style.randomvideos}>
-        {randomVideos.filter(video => video.rand !== videoData.rand).sort(() => Math.random() - 0.5).map((video, index) => (
-  <div onClick={() => goVideo(video.rand)} key={index} className={style.videoitem} style={{ top: `${index * 300}px` }}>
-    <img width={200} height={150} style={{borderRadius: 10}} src={`https://img.youtube.com/vi/${video.url}/0.jpg`} alt={video.title} />
-    <h3>{video.title}</h3>
-    <h4>{video.username}</h4>
-  </div>
-))}
-            </div></>
-          );
+              </div>
+
+              <div className="watch-info">
+                <span className="section-kicker">WATCHING</span>
+                <h1>{videoData.title || '제목 없는 영상'}</h1>
+                <div className="watch-meta-row">
+                  <div className="creator-row">
+                    <div className="avatar large-avatar" aria-hidden="true">
+                      {(videoData.username || 'S').slice(0, 1).toUpperCase()}
+                    </div>
+                    <div><strong>{videoData.username || '알 수 없는 사용자'}</strong><span>등록자</span></div>
+                  </div>
+                  <span className="view-count">조회수 {formatViews((Number(videoData.view) || 0) + 1)}회</span>
+                </div>
+
+                <section className="description-box">
+                  <h2>설명</h2>
+                  <p>{videoData.description || '등록된 설명이 없습니다.'}</p>
+                </section>
+              </div>
+            </article>
+
+            <aside className="recommendations" aria-labelledby="recommend-title">
+              <div className="aside-heading">
+                <span className="section-kicker">UP NEXT</span>
+                <h2 id="recommend-title">다음 영상</h2>
+              </div>
+
+              {recommendations.length ? recommendations.map((video) => (
+                <Link className="recommend-card" to={`/video/${video.rand}`} key={video.id || video.rand}>
+                  <img src={`https://img.youtube.com/vi/${video.url}/mqdefault.jpg`} alt="" loading="lazy" />
+                  <div>
+                    <h3>{video.title || '제목 없는 영상'}</h3>
+                    <p>{video.username || '알 수 없는 사용자'}</p>
+                    <span>조회수 {formatViews(video.view)}회</span>
+                  </div>
+                </Link>
+              )) : (
+                <p className="muted-copy">추천할 다른 영상이 없습니다.</p>
+              )}
+            </aside>
+          </div>
+        )}
+      </main>
+      <Footer />
+    </div>
+  );
 }
 
 export default Video;

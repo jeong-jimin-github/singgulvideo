@@ -1,5 +1,4 @@
-import { Route, Routes } from "react-router-dom";
-
+import { Navigate, Route, Routes } from 'react-router-dom';
 import Main from './Main/Main';
 import Login from './Login/Login';
 import Register from './Register/Register';
@@ -8,15 +7,14 @@ import Video from './Video/Video';
 
 function App() {
   return (
-    <div>
-      <Routes>
-        <Route path="/" element={<Main />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/upload" element={<Upload />} />
-        <Route path="/video/*" element={<Video />} />
-      </Routes>
-    </div>
+    <Routes>
+      <Route path="/" element={<Main />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/upload" element={<Upload />} />
+      <Route path="/video/:rand" element={<Video />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
