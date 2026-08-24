@@ -5,6 +5,7 @@ import Footer from '../Footer';
 import Up from '../Up';
 import { db } from '../firebase';
 import NicoPlayer from './NicoPlayer';
+import VideoSocial from './VideoSocial';
 
 function formatViews(value) {
   return (Number(value) || 0).toLocaleString('ko-KR');
@@ -93,15 +94,11 @@ function Video() {
               <div className="watch-info">
                 <span className="section-kicker">WATCHING</span>
                 <h1>{videoData.title || '제목 없는 영상'}</h1>
-                <div className="watch-meta-row">
-                  <div className="creator-row">
-                    <div className="avatar large-avatar" aria-hidden="true">
-                      {(videoData.username || 'S').slice(0, 1).toUpperCase()}
-                    </div>
-                    <div><strong>{videoData.username || '알 수 없는 사용자'}</strong><span>등록자</span></div>
-                  </div>
-                  <span className="view-count">조회수 {formatViews((Number(videoData.view) || 0) + 1)}회</span>
-                </div>
+
+                <VideoSocial
+                  video={videoData}
+                  viewCount={(Number(videoData.view) || 0) + 1}
+                />
 
                 <section className="description-box">
                   <h2>설명</h2>
