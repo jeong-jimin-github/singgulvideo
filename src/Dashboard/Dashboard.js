@@ -87,9 +87,21 @@ function Dashboard() {
       setSubscribers(0);
       return undefined;
     }
-    const creatorId = getCreatorId({ uploaderUid: user.uid, username });
-    const subscriberQuery = query(collection(db, 'subscriptions'), where('creatorId', '==', creatorId));
-    return onSnapshot(subscriberQuery, (snapshot) => setSubscribers(snapshot.size), console.error);
+
+    const creatorIds = new Set([
+      `uid_${user.uid}`,
+      `legacy_${encodeURIComponent(username)}`,
+    ]);
+    return onSnapshot(collection(db, 'subscriptions'), (snapshot) => {
+      const subscriberUids = new Set(
+        snapshot.docs
+          .map((item) => item.data())
+          .filter((item) => creatorIds.has(item.creatorId))
+          .map((item) => item.uid)
+          .filter(Boolean)
+      );
+      setSubscribers(subscriberUids.size);
+    }, console.error);
   }, [user, username]);
 
   const totalViews = useMemo(
@@ -125,6 +137,7 @@ function Dashboard() {
         description: draftDescription.trim(),
         url: videoId,
         uploaderUid: user.uid,
+        creatorId: getCreatorId(video),
         username: username || user.email || '사용자',
         updatedAt: serverTimestamp(),
       });
