@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
@@ -40,7 +41,7 @@ function formatTime(value) {
   return `${minutes}:${String(rest).padStart(2, '0')}`;
 }
 
-function NicoPlayer({ videoId, videoRand, title }) {
+function NicoPlayer({ videoId, videoRand, title, commentListTarget = null }) {
   const frameRef = useRef(null);
   const playerMountRef = useRef(null);
   const playerRef = useRef(null);
@@ -349,126 +350,132 @@ function NicoPlayer({ videoId, videoRand, title }) {
     }
   };
 
+  const commentList = (
+    <section className={style.commentList} aria-labelledby={`comments-${videoRand}`}>
+      <div className={style.commentListHeading}>
+        <div>
+          <span>COMMENTS</span>
+          <h2 id={`comments-${videoRand}`}>댓글 {comments.length.toLocaleString('ko-KR')}개</h2>
+        </div>
+        <p>시간을 누르면 해당 장면으로 이동합니다.</p>
+      </div>
+
+      {commentStatus === 'ready' && comments.length === 0 && (
+        <div className={style.emptyComments}>아직 댓글이 없습니다. 첫 댓글을 남겨보세요.</div>
+      )}
+
+      <div className={style.commentItems}>
+        {comments.map((comment) => {
+          const summary = getReactionSummary(comment.id);
+          return (
+            <article className={style.commentItem} key={comment.id}>
+              <div className={style.commentAvatar} aria-hidden="true">
+                {(comment.username || 'U').slice(0, 1).toUpperCase()}
+              </div>
+              <div className={style.commentBody}>
+                <div className={style.commentMeta}>
+                  <strong>{comment.username || '사용자'}</strong>
+                  <button type="button" onClick={() => seekToComment(comment.time)}>{formatTime(comment.time)}</button>
+                </div>
+                <p>{comment.text}</p>
+                <div className={style.commentActions}>
+                  <button
+                    type="button"
+                    className={summary.mine === 'like' ? style.reactionActive : ''}
+                    onClick={() => toggleCommentReaction(comment.id, 'like')}
+                    disabled={reactionBusy === comment.id}
+                    aria-pressed={summary.mine === 'like'}
+                  >
+                    👍 {summary.likes}
+                  </button>
+                  <button
+                    type="button"
+                    className={summary.mine === 'dislike' ? style.reactionActive : ''}
+                    onClick={() => toggleCommentReaction(comment.id, 'dislike')}
+                    disabled={reactionBusy === comment.id}
+                    aria-pressed={summary.mine === 'dislike'}
+                  >
+                    👎 {summary.dislikes}
+                  </button>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+
   return (
-    <section className={style.root} aria-label="실시간 댓글 플레이어">
-      <div className={style.frame} ref={frameRef}>
-        <div className={style.player} ref={playerMountRef} />
+    <>
+      <section className={style.root} aria-label="실시간 댓글 플레이어">
+        <div className={style.frame} ref={frameRef}>
+          <div className={style.player} ref={playerMountRef} />
 
-        {commentsVisible && (
-          <div className={style.overlay} aria-hidden="true">
-            {activeComments.map((comment) => (
-              <span
-                className={style.flyingComment}
-                key={comment.renderKey}
-                style={{
-                  top: `${6 + comment.lane * 9.2}%`,
-                  animationPlayState: playing ? 'running' : 'paused',
-                }}
-                onAnimationEnd={() => removeComment(comment.renderKey)}
-              >
-                {comment.text}
-              </span>
-            ))}
-          </div>
-        )}
+          {commentsVisible && (
+            <div className={style.overlay} aria-hidden="true">
+              {activeComments.map((comment) => (
+                <span
+                  className={style.flyingComment}
+                  key={comment.renderKey}
+                  style={{
+                    top: `${6 + comment.lane * 9.2}%`,
+                    animationPlayState: playing ? 'running' : 'paused',
+                  }}
+                  onAnimationEnd={() => removeComment(comment.renderKey)}
+                >
+                  {comment.text}
+                </span>
+              ))}
+            </div>
+          )}
 
-        <div className={style.floatingControls}>
-          <button type="button" className={style.overlayButton} onClick={toggleComments} aria-pressed={commentsVisible}>
-            댓글 {commentsVisible ? 'ON' : 'OFF'}
-          </button>
-          <button type="button" className={style.overlayButton} onClick={toggleFullscreen}>
-            {fullscreen ? '축소' : '전체화면'}
-          </button>
-        </div>
-
-        {!playerReady && !playerError && <div className={style.loading}>플레이어 불러오는 중…</div>}
-        {playerError && <div className={style.playerError}>{playerError}</div>}
-      </div>
-
-      <div className={style.commentBar}>
-        <div className={style.commentStats}>
-          <span className={style.liveDot} />
-          <strong>{commentStatus === 'ready' ? `${comments.length} 댓글` : '댓글 연결 중'}</strong>
-          <span>{formatTime(currentTime)}{duration ? ` / ${formatTime(duration)}` : ''}</span>
-        </div>
-
-        {user ? (
-          <form className={style.composer} onSubmit={handleSubmit}>
-            <span className={style.timestamp}>{formatTime(currentTime)}</span>
-            <input
-              value={commentText}
-              onChange={(event) => setCommentText(event.target.value)}
-              placeholder="지금 이 장면에 댓글 남기기"
-              maxLength={80}
-              aria-label="실시간 댓글"
-            />
-            <button type="submit" disabled={!commentText.trim() || submitting || !playerReady}>
-              {submitting ? '전송 중' : '전송'}
+          <div className={style.floatingControls}>
+            <button type="button" className={style.overlayButton} onClick={toggleComments} aria-pressed={commentsVisible}>
+              댓글 {commentsVisible ? 'ON' : 'OFF'}
             </button>
-          </form>
-        ) : user === null ? (
-          <p className={style.loginHint}><Link to="/login">로그인</Link>하면 현재 재생 시점에 댓글을 남길 수 있습니다.</p>
-        ) : (
-          <p className={style.loginHint}>로그인 상태 확인 중…</p>
-        )}
-
-        {commentError && <p className={style.errorText} role="alert">{commentError}</p>}
-      </div>
-
-      <section className={style.commentList} aria-labelledby={`comments-${videoRand}`}>
-        <div className={style.commentListHeading}>
-          <div>
-            <span>COMMENTS</span>
-            <h2 id={`comments-${videoRand}`}>댓글 {comments.length.toLocaleString('ko-KR')}개</h2>
+            <button type="button" className={style.overlayButton} onClick={toggleFullscreen}>
+              {fullscreen ? '축소' : '전체화면'}
+            </button>
           </div>
-          <p>시간을 누르면 해당 장면으로 이동합니다.</p>
+
+          {!playerReady && !playerError && <div className={style.loading}>플레이어 불러오는 중…</div>}
+          {playerError && <div className={style.playerError}>{playerError}</div>}
         </div>
 
-        {commentStatus === 'ready' && comments.length === 0 && (
-          <div className={style.emptyComments}>아직 댓글이 없습니다. 첫 댓글을 남겨보세요.</div>
-        )}
+        <div className={style.commentBar}>
+          <div className={style.commentStats}>
+            <span className={style.liveDot} />
+            <strong>{commentStatus === 'ready' ? `${comments.length} 댓글` : '댓글 연결 중'}</strong>
+            <span>{formatTime(currentTime)}{duration ? ` / ${formatTime(duration)}` : ''}</span>
+          </div>
 
-        <div className={style.commentItems}>
-          {comments.map((comment) => {
-            const summary = getReactionSummary(comment.id);
-            return (
-              <article className={style.commentItem} key={comment.id}>
-                <div className={style.commentAvatar} aria-hidden="true">
-                  {(comment.username || 'U').slice(0, 1).toUpperCase()}
-                </div>
-                <div className={style.commentBody}>
-                  <div className={style.commentMeta}>
-                    <strong>{comment.username || '사용자'}</strong>
-                    <button type="button" onClick={() => seekToComment(comment.time)}>{formatTime(comment.time)}</button>
-                  </div>
-                  <p>{comment.text}</p>
-                  <div className={style.commentActions}>
-                    <button
-                      type="button"
-                      className={summary.mine === 'like' ? style.reactionActive : ''}
-                      onClick={() => toggleCommentReaction(comment.id, 'like')}
-                      disabled={reactionBusy === comment.id}
-                      aria-pressed={summary.mine === 'like'}
-                    >
-                      👍 {summary.likes}
-                    </button>
-                    <button
-                      type="button"
-                      className={summary.mine === 'dislike' ? style.reactionActive : ''}
-                      onClick={() => toggleCommentReaction(comment.id, 'dislike')}
-                      disabled={reactionBusy === comment.id}
-                      aria-pressed={summary.mine === 'dislike'}
-                    >
-                      👎 {summary.dislikes}
-                    </button>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+          {user ? (
+            <form className={style.composer} onSubmit={handleSubmit}>
+              <span className={style.timestamp}>{formatTime(currentTime)}</span>
+              <input
+                value={commentText}
+                onChange={(event) => setCommentText(event.target.value)}
+                placeholder="지금 이 장면에 댓글 남기기"
+                maxLength={80}
+                aria-label="실시간 댓글"
+              />
+              <button type="submit" disabled={!commentText.trim() || submitting || !playerReady}>
+                {submitting ? '전송 중' : '전송'}
+              </button>
+            </form>
+          ) : user === null ? (
+            <p className={style.loginHint}><Link to="/login">로그인</Link>하면 현재 재생 시점에 댓글을 남길 수 있습니다.</p>
+          ) : (
+            <p className={style.loginHint}>로그인 상태 확인 중…</p>
+          )}
+
+          {commentError && <p className={style.errorText} role="alert">{commentError}</p>}
         </div>
       </section>
-    </section>
+
+      {commentListTarget ? createPortal(commentList, commentListTarget) : null}
+    </>
   );
 }
 
