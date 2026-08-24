@@ -1,0 +1,127 @@
+.socialRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 18px 0 20px;
+}
+
+.creatorBlock {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(255,255,255,.14), rgba(255,255,255,.045));
+  color: #fff;
+  font-weight: 900;
+}
+
+.creatorCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.creatorCopy strong {
+  overflow: hidden;
+  color: #fff;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.creatorCopy span {
+  color: rgba(255,255,255,.48);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.subscribeButton {
+  min-width: 76px;
+  height: 38px;
+  margin-left: 6px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #080808;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.subscribeButton.subscribed {
+  border: 1px solid rgba(255,255,255,.11);
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.8);
+}
+
+.subscribeButton:disabled,
+.reactionGroup button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.reactionGroup {
+  display: flex;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 999px;
+  background: rgba(255,255,255,.045);
+}
+
+.reactionGroup button {
+  min-width: 72px;
+  height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-right: 1px solid rgba(255,255,255,.08);
+  background: transparent;
+  color: rgba(255,255,255,.67);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.reactionGroup button:last-child {
+  border-right: 0;
+}
+
+.reactionGroup button:hover,
+.reactionGroup .activeReaction {
+  background: rgba(255,255,255,.1);
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .socialRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .creatorBlock {
+    width: 100%;
+  }
+
+  .creatorCopy {
+    flex: 1;
+  }
+
+  .reactionGroup {
+    align-self: flex-start;
+  }
+}
