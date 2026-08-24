@@ -6,6 +6,7 @@ import { auth, db } from '../firebase';
 import style from './VideoSocial.module.css';
 
 function getCreatorId(video) {
+  if (video.creatorId) return video.creatorId;
   if (video.uploaderUid) return `uid_${video.uploaderUid}`;
   return `legacy_${encodeURIComponent(video.username || 'unknown')}`;
 }
