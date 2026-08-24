@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { Link, useNavigate } from 'react-router-dom';
 import Footer from '../Footer';
 import Up from '../Up';
@@ -82,8 +82,11 @@ function Upload() {
         title: title.trim(),
         description: description.trim(),
         username: username || user.email || '사용자',
+        uploaderUid: user.uid,
+        creatorId: `uid_${user.uid}`,
         rand,
         view: 0,
+        createdAt: serverTimestamp(),
       });
       navigate(`/video/${rand}`);
     } catch (uploadError) {
