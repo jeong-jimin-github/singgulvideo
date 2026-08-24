@@ -96,7 +96,6 @@ function Video() {
               <div className="watch-info">
                 <span className="section-kicker">WATCHING</span>
                 <h1>{videoData.title || '제목 없는 영상'}</h1>
-                <div ref={setCommentListTarget} />
 
                 <VideoSocial
                   video={videoData}
@@ -107,6 +106,8 @@ function Video() {
                   <h2>설명</h2>
                   <p>{videoData.description || '등록된 설명이 없습니다.'}</p>
                 </section>
+
+                <div ref={setCommentListTarget} />
               </div>
             </article>
 
