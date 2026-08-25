@@ -13,13 +13,22 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
 }
 
-.frame:fullscreen {
+.frame:fullscreen,
+.fullscreenFrame {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   aspect-ratio: auto;
   border: 0;
   border-radius: 0;
   background: #000;
+  box-shadow: none;
+}
+
+.fullscreenFrame {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
 }
 
 .player {
@@ -85,7 +94,8 @@
 
 .frame:hover .floatingControls,
 .frame:focus-within .floatingControls,
-.frame:fullscreen .floatingControls {
+.frame:fullscreen .floatingControls,
+.fullscreenFrame .floatingControls {
   opacity: 1;
   transform: translateY(0);
 }
@@ -105,6 +115,23 @@
 }
 
 .overlayButton:hover { background: rgba(32, 32, 32, 0.88); }
+
+.mobileControls {
+  display: none;
+}
+
+.mobileControlButton {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.76);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
 
 .loading,
 .playerError {
@@ -356,15 +383,38 @@
   .frame { border-radius: 12px; }
 
   .floatingControls {
-    top: 8px;
-    right: 8px;
+    display: none;
+  }
+
+  .frame:fullscreen .floatingControls,
+  .fullscreenFrame .floatingControls {
+    display: flex;
+    top: max(8px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
     opacity: 1;
     transform: none;
+  }
+
+  .mobileControls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .fullscreenFrame + .mobileControls {
+    display: none;
   }
 
   .overlayButton {
     min-height: 30px;
     padding: 0 9px;
+    font-size: 10px;
+  }
+
+  .mobileControlButton {
+    min-height: 32px;
+    padding: 0 10px;
     font-size: 10px;
   }
 
