@@ -152,7 +152,7 @@ function NicoPlayer({ videoId, videoRand, title, commentListTarget = null }) {
             autoplay: 1,
             rel: 0,
             playsinline: 1,
-            fs: 0,
+            fs: 1,
           },
           events: {
             onReady: (event) => {
@@ -247,11 +247,40 @@ function NicoPlayer({ videoId, videoRand, title, commentListTarget = null }) {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setFullscreen(document.fullscreenElement === frameRef.current);
+      const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+      setFullscreen(fullscreenElement === frameRef.current);
     };
+
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!fullscreen) return undefined;
+
+    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+    if (fullscreenElement === frameRef.current) return undefined;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setFullscreen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [fullscreen]);
 
   const removeComment = (renderKey) => {
     setActiveComments((current) => current.filter((comment) => comment.renderKey !== renderKey));
@@ -265,15 +294,32 @@ function NicoPlayer({ videoId, videoRand, title, commentListTarget = null }) {
   };
 
   const toggleFullscreen = async () => {
+    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+    const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+
     try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else if (frameRef.current?.requestFullscreen) {
-        await frameRef.current.requestFullscreen();
+      if (fullscreenElement) {
+        if (exitFullscreen) await exitFullscreen.call(document);
+        return;
+      }
+
+      if (fullscreen) {
+        setFullscreen(false);
+        return;
+      }
+
+      const frame = frameRef.current;
+      const requestFullscreen = frame?.requestFullscreen || frame?.webkitRequestFullscreen;
+      if (requestFullscreen) {
+        await requestFullscreen.call(frame);
+        setFullscreen(true);
+        return;
       }
     } catch (error) {
-      console.error(error);
+      console.warn('Native fullscreen is unavailable; using CSS fallback.', error);
     }
+
+    setFullscreen(true);
   };
 
   const seekToComment = (time) => {
@@ -409,7 +455,7 @@ function NicoPlayer({ videoId, videoRand, title, commentListTarget = null }) {
   return (
     <>
       <section className={style.root} aria-label="실시간 댓글 플레이어">
-        <div className={style.frame} ref={frameRef}>
+        <div className={`${style.frame} ${fullscreen ? style.fullscreenFrame : ''}`} ref={frameRef}>
           <div className={style.player} ref={playerMountRef} />
 
           {commentsVisible && (
@@ -441,6 +487,15 @@ function NicoPlayer({ videoId, videoRand, title, commentListTarget = null }) {
 
           {!playerReady && !playerError && <div className={style.loading}>플레이어 불러오는 중…</div>}
           {playerError && <div className={style.playerError}>{playerError}</div>}
+        </div>
+
+        <div className={style.mobileControls} aria-label="모바일 플레이어 설정">
+          <button type="button" className={style.mobileControlButton} onClick={toggleComments} aria-pressed={commentsVisible}>
+            댓글 {commentsVisible ? 'ON' : 'OFF'}
+          </button>
+          <button type="button" className={style.mobileControlButton} onClick={toggleFullscreen}>
+            {fullscreen ? '축소' : '전체화면'}
+          </button>
         </div>
 
         <div className={style.commentBar}>
